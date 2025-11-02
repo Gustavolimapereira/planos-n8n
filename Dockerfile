@@ -5,6 +5,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Instala todas as dependências (dev e prod)
 RUN npm install
 
 COPY . .
@@ -12,7 +13,7 @@ COPY . .
 # Gera o Prisma Client
 RUN npx prisma generate
 
-# Compila o projeto NestJS
+# Compila o projeto NestJS (gera /app/dist)
 RUN npm run build
 
 # --- Etapa 2: Produção ---
@@ -27,15 +28,17 @@ RUN npm install --omit=dev
 
 # Copia os artefatos necessários da etapa de build
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Caso queira manter migrations dentro do container:
+# Copia migrations (caso precise)
 COPY --from=builder /app/prisma/migrations ./prisma/migrations
 
-ENV NODE_ENV production
+# Garante que o Prisma Client esteja gerado
+RUN npx prisma generate
 
+ENV NODE_ENV=production
 EXPOSE 3333
 
 # Roda migrações e depois inicia
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
