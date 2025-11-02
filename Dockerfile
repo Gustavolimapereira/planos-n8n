@@ -16,6 +16,8 @@ RUN npx prisma generate
 # Compila o projeto NestJS. Isso gera /app/dist/
 RUN npm run build
 
+RUN echo "=== Conteúdo gerado em /app após o build ===" && ls -R /app
+
 # --- Etapa 2: Produção (Lightweight) ---
 FROM node:20-alpine AS production
 
